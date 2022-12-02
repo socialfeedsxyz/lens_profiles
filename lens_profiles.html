@@ -1,0 +1,183 @@
+<title>🌿</title>
+<body style="text-align: center;">
+    <h1>Lens Profiles 🌿</h1>
+    <button onclick="fetchAll()">Ping</button>
+</body>
+</script>
+<script type="text/javascript">
+    function init() {
+        
+        fetchAll()
+    }
+    function toHex(d) {
+        var hex = Number(d).toString(16);
+        if (hex.length % 2 !== 0) {
+            hex = "0" + hex;
+        }
+
+        return "0x" + hex;
+    }
+
+    function getQuery(min) {
+        let hexes = []
+        min = parseInt(min)
+        let max = min + 50
+        for (let i = min; i < max; i++) {
+            hexes.push(toHex(i, 2))
+        }
+        const query1 = `query Profiles {
+    profiles(request: { profileIds: ${JSON.stringify(hexes)}, limit: 50 }) {
+      items {
+        id
+        name
+        bio
+        attributes {
+          displayType
+          traitType
+          key
+          value
+        }
+        followNftAddress
+        metadata
+        isDefault
+        picture {
+          ... on NftImage {
+            contractAddress
+            tokenId
+            uri
+            verified
+          }
+          ... on MediaSet {
+            original {
+              url
+              mimeType
+            }
+          }
+          __typename
+        }
+        handle
+        coverPicture {
+          ... on NftImage {
+            contractAddress
+            tokenId
+            uri
+            verified
+          }
+          ... on MediaSet {
+            original {
+              url
+              mimeType
+            }
+          }
+          __typename
+        }
+        ownedBy
+        dispatcher {
+          address
+          canUseRelay
+        }
+        stats {
+          totalFollowers
+          totalFollowing
+          totalPosts
+          totalComments
+          totalMirrors
+          totalPublications
+          totalCollects
+        }
+        onChainIdentity {
+            ens {
+                name
+            }
+            proofOfHumanity
+            sybilDotOrg {
+                verified
+                source {
+                twitter {
+                    handle
+                }
+                }
+            }
+            worldcoin {
+                isHuman
+            }
+        }
+        followModule {
+          ... on FeeFollowModuleSettings {
+            type
+            amount {
+              asset {
+                symbol
+                name
+                decimals
+                address
+              }
+              value
+            }
+            recipient
+          }
+          ... on ProfileFollowModuleSettings {
+           type
+          }
+          ... on RevertFollowModuleSettings {
+           type
+          }
+        }
+      }
+      pageInfo {
+        prev
+        next
+        totalCount
+      }
+    }
+  }`
+        return { query: query1 }
+    }
+    async function postLens(min) {
+        try {
+            const url = 'https://api.lens.dev/'
+            const data = getQuery(min)
+            const response = await fetchPost(url, data)
+            var res = false
+            if (response) {
+                if (response.data) {
+                    if (response.data.profiles) {
+                        if (response.data.profiles.items) {
+                            res = response.data.profiles.items
+                        }
+                    }
+                    if (response.errors) {
+                        console.log(response.errors)
+                    }
+                }
+            }
+            return res
+        } catch (err) {
+            console.log(err.message)
+            throw err;
+        }
+
+    }
+    async function fetchAll() {
+
+        for (let i = 1; i < 1000; i += 50) {
+            let profiles = await postLens(i)
+            console.log(profiles)
+            await new Promise(r => setTimeout(r, 3000));
+        }
+
+
+    }
+    async function fetchPost(url, body) {
+        var data = false
+        try {
+            let bearer = false;
+            const response = await fetch(url, { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+            return response.json()
+        } catch (err) {
+            console.log(err)
+            return data
+        }
+    }
+
+</script>
